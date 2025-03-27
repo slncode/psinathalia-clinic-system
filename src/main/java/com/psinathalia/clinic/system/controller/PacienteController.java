@@ -20,7 +20,7 @@ import java.util.List;
 @RequestMapping("/pacientes")
 @CrossOrigin(origins = "http://localhost:3000")
 public class PacienteController {
-
+    //TESTE PARA VERIFICAR COMMIT NO INTELLIJ
     @Autowired
     private PacienteService pacienteService;
 
