@@ -3,6 +3,7 @@ package com.psinathalia.clinic.system.controller;
 import com.psinathalia.clinic.system.model.Endereco;
 import com.psinathalia.clinic.system.model.Paciente;
 import com.psinathalia.clinic.system.repository.PacienteRepository;
+import com.psinathalia.clinic.system.service.CryptoService;
 import com.psinathalia.clinic.system.service.PacienteService;
 import com.psinathalia.clinic.system.service.CepService;
 import jakarta.validation.Valid;
@@ -15,17 +16,21 @@ import java.time.Period;
 import java.util.Comparator;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/pacientes")
 @CrossOrigin(origins = "http://localhost:3000")
 public class PacienteController {
-    //TESTE PARA VERIFICAR COMMIT NO INTELLIJ
+
     @Autowired
     private PacienteService pacienteService;
 
     @Autowired
     private CepService cepService;
+
+    @Autowired
+    private CryptoService cryptoService;
 
     @Autowired
     private PacienteRepository pacienteRepository;
@@ -52,7 +57,8 @@ public class PacienteController {
         if (cpf.length() != 11) {
             throw new IllegalArgumentException("CPF inválido. Deve conter 11 dígitos.");
         }
-        paciente.getPessoa().setCpf(cpf);
+        //paciente.getPessoa().setCpf(cpf);
+        paciente.getPessoa().setCpf(cryptoService.encrypt(cpf));
 
         try {
             if (paciente.getEndereco() != null && paciente.getEndereco().getCep() != null) {
@@ -77,6 +83,27 @@ public class PacienteController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
+    @PostMapping("/verificarCpf")
+    public ResponseEntity<Boolean> verificarCpf(@RequestBody Map<String, String> requestBody) {
+        String cpfDigitado = requestBody.get("cpfDigitado");
+        Long pacienteId = requestBody.containsKey("pacienteId") ? Long.parseLong(requestBody.get("pacienteId")) : null;
+
+        if (cpfDigitado == null) {
+            return ResponseEntity.badRequest().body(false);
+        }
+
+        boolean resultado = pacienteService.verificarCpf(cpfDigitado, pacienteId);
+        return ResponseEntity.ok(resultado);
+    }
+
+    @GetMapping("/{id}/cpf")
+    public ResponseEntity<String> getCpf(@PathVariable Long id) {
+        String cpfDescriptografado = pacienteService.getCpfDescriptografado(id);
+        return ResponseEntity.ok(cpfDescriptografado);
+    }
+
+
 
 
 //    @PostMapping

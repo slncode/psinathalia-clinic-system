@@ -2,6 +2,8 @@ package com.psinathalia.clinic.system.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
@@ -19,9 +21,9 @@ public class Pessoa {
     private String cpf;
     @Email
     private String email;
-    //    @Enumerated(EnumType.STRING) // Salva como STRING no banco de dados
-//    @Column(nullable = false)
-//    private Sexo sexo;
+    @Enumerated(EnumType.STRING) // Salva como STRING no banco de dados
+    @Column(nullable = false)
+    private Sexo sexo;
 
 
     public String getNome() {
@@ -65,11 +67,11 @@ public class Pessoa {
     }
 
 
-    //    public Sexo getSexo() {
-//        return sexo;
-//    }
-//
-//    public void setSexo(Sexo sexo) {
-//        this.sexo = sexo;
-//    }
+    public Sexo getSexo() {
+        return sexo;
+    }
+
+    public void setSexo(Sexo sexo) {
+        this.sexo = sexo;
+    }
 }

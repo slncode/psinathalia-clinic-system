@@ -14,6 +14,9 @@ public class PacienteService {
     @Autowired
     private PacienteRepository pacienteRepository;
 
+    @Autowired
+    private CryptoService cryptoService;
+
     public List<Paciente> findAll() {
         return pacienteRepository.findAll();
     }
@@ -28,5 +31,19 @@ public class PacienteService {
 
     public void delete(Long id) {
         pacienteRepository.deleteById(id);
+    }
+
+    public boolean verificarCpf(String cpfDigitado, Long pacienteId) {
+        Paciente paciente = pacienteRepository.findById(pacienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Paciente não encontrado"));
+
+        // Comparar CPF digitado com CPF armazenado (criptografado)
+        return cryptoService.matches(cpfDigitado, paciente.getPessoa().getCpf());
+    }
+
+    public String getCpfDescriptografado(Long pacienteId) {
+        Paciente paciente = pacienteRepository.findById(pacienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Paciente não encontrado"));
+        return cryptoService.decrypt(paciente.getPessoa().getCpf());
     }
 }
