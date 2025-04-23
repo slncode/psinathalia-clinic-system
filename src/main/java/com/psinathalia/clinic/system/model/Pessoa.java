@@ -15,7 +15,7 @@ public class Pessoa {
     private String nome;
     @NotNull
     private LocalDate dataNascimento;
-    private Integer idade;
+    private String idade;
     @NotNull
     @Column(unique = true)
     private String cpf;
@@ -42,11 +42,11 @@ public class Pessoa {
         this.dataNascimento = dataNascimento;
     }
 
-    public Integer getIdade() {
+    public String getIdade() {
         return idade;
     }
 
-    public void setIdade(Integer idade) {
+    public void setIdade(String idade) {
         this.idade = idade;
     }
 
