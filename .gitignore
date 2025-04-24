@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Arquivos de Config ###
+
+.env
+application-dev.yml
+application-prod.yml
+*.properties
