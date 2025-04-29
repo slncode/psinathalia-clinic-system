@@ -2,7 +2,11 @@ package com.psinathalia.clinic.system.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class PacienteRequest {
 
     @NotNull(message = "Pessoa é obrigatória")
@@ -13,40 +17,7 @@ public class PacienteRequest {
     @Valid
     private EnderecoRequest endereco;
 
-    private String responsavelFinanceiro;
     private String escola;
+    private String responsavelFinanceiro;
 
-    // Getters e Setters
-
-    public PessoaRequest getPessoa() {
-        return pessoa;
-    }
-
-    public void setPessoa(PessoaRequest pessoa) {
-        this.pessoa = pessoa;
-    }
-
-    public EnderecoRequest getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(EnderecoRequest endereco) {
-        this.endereco = endereco;
-    }
-
-    public String getResponsavelFinanceiro() {
-        return responsavelFinanceiro;
-    }
-
-    public void setResponsavelFinanceiro(String responsavelFinanceiro) {
-        this.responsavelFinanceiro = responsavelFinanceiro;
-    }
-
-    public String getEscola() {
-        return escola;
-    }
-
-    public void setEscola(String escola) {
-        this.escola = escola;
-    }
 }

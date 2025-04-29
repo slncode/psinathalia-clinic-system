@@ -2,14 +2,20 @@ package com.psinathalia.clinic.system.service;
 
 import com.psinathalia.clinic.system.dto.request.EnderecoRequest;
 import com.psinathalia.clinic.system.dto.request.PacienteRequest;
+import com.psinathalia.clinic.system.dto.request.PessoaRequest;
+import com.psinathalia.clinic.system.dto.response.PacienteResponse;
 import com.psinathalia.clinic.system.exception.CpfInvalidoException;
 import com.psinathalia.clinic.system.exception.CpfJaCadastradoException;
 import com.psinathalia.clinic.system.exception.EnderecoInvalidoException;
 import com.psinathalia.clinic.system.exception.PacienteNotFoundException;
+import com.psinathalia.clinic.system.mapper.EnderecoMapper;
 import com.psinathalia.clinic.system.mapper.PacienteMapper;
+import com.psinathalia.clinic.system.mapper.PessoaMapper;
 import com.psinathalia.clinic.system.model.Endereco;
 import com.psinathalia.clinic.system.model.Paciente;
+import com.psinathalia.clinic.system.model.Pessoa;
 import com.psinathalia.clinic.system.repository.PacienteRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,16 +27,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class PacienteService {
 
-    @Autowired
-    private PacienteRepository pacienteRepository;
-
-    @Autowired
-    private CryptoService cryptoService;
-
-    @Autowired
-    private CepService cepService;
+    private final PacienteRepository pacienteRepository;
+    private final PacienteMapper pacienteMapper;
+    private final PessoaMapper pessoaMapper;
+    private final EnderecoMapper enderecoMapper;
+    private final CryptoService cryptoService;
+    private final CepService cepService;
 
     public List<Paciente> findAll() {
         return pacienteRepository.findAll();
@@ -66,35 +71,61 @@ public class PacienteService {
         return cryptoService.decrypt(paciente.getPessoa().getCpf());
     }
 
+    public PacienteResponse findByIdResponse(Long id) {
+        return pacienteRepository.findById(id)
+                .map(pacienteMapper::toResponse)
+                .orElseThrow(() -> new PacienteNotFoundException(id));
+    }
+
+    public List<PacienteResponse> findAllOrdered() {
+        // Usando query específica para evitar N+1 queries
+        List<Paciente> pacientes = pacienteRepository.findAllWithPessoaAndEnderecoOrdered();
+
+        return pacientes.stream()
+                .map(pacienteMapper::toResponse)
+                .toList();
+    }
+
 
     @Transactional
-    public Paciente createPaciente(PacienteRequest request) {
-        // Converte request para entidade
-        Paciente paciente = PacienteMapper.toModel(request);
-
-        // Valida e processa CPF
-        String cpf = validarEProcessarCpf(request.getPessoa().getCpf());
-        paciente.getPessoa().setCpf(cryptoService.encrypt(cpf));
-
-        // Busca e valida endereço
-        Endereco endereco = null;
+    public PacienteResponse createPaciente(PacienteRequest request) {
         try {
-            endereco = buscarEValidarEndereco(request.getEndereco());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        paciente.setEndereco(endereco);
+            // Validar CPF antes de prosseguir
+            String cpf = validarEProcessarCpf(request.getPessoa().getCpf());
 
-        // Calcula idade
-        calcularIdade(paciente);
+            // Verificar se já existe pessoa com este CPF
+//            if (pacienteRepository.existsByCpfPessoa(cpf)) {
+//                throw new CpfJaCadastradoException("CPF já cadastrado.");
+//            }
 
-        // Salva paciente
-        try {
-            return pacienteRepository.save(paciente);
+            // Criar e configurar Pessoa
+            PessoaRequest pessoaRequest = request.getPessoa();
+            pessoaRequest.setCpf(cryptoService.encrypt(cpf));
+            Pessoa pessoa = pessoaMapper.toModel(pessoaRequest);
+            calcularIdade(pessoa);
+
+            // Buscar e validar endereço
+            Endereco endereco = buscarEValidarEndereco(request.getEndereco());
+
+            // Criar Paciente e estabelecer relacionamentos
+            Paciente paciente = pacienteMapper.toModel(request);
+            paciente.setPessoa(pessoa);
+            pessoa.setPaciente(paciente);
+
+            paciente.setEndereco(endereco);
+            endereco.setPaciente(paciente);
+
+            // Salvar paciente (cascade vai salvar pessoa e endereço)
+            Paciente pacienteSalvo = pacienteRepository.save(paciente);
+
+            // Converter para response e retornar
+            return pacienteMapper.toResponse(pacienteSalvo);
+
         } catch (DataIntegrityViolationException e) {
-            throw new CpfJaCadastradoException("CPF já cadastrado.");
+            throw new CpfJaCadastradoException("Erro ao salvar paciente: CPF já cadastrado.");
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao criar paciente: " + e.getMessage(), e);
         }
-
     }
 
     private String validarEProcessarCpf(String cpf) {
@@ -132,9 +163,9 @@ public class PacienteService {
 //        }
 //    }
 
-    private void calcularIdade(Paciente paciente) {
-        if (paciente.getPessoa().getDataNascimento() != null) {
-            LocalDate dataNascimento = paciente.getPessoa().getDataNascimento();
+    private void calcularIdade(Pessoa pessoa) {
+        if (pessoa.getDataNascimento() != null) {
+            LocalDate dataNascimento = pessoa.getDataNascimento();
             LocalDate hoje = LocalDate.now();
             Period periodo = Period.between(dataNascimento, hoje);
 
@@ -163,7 +194,7 @@ public class PacienteService {
 
             }
 
-            paciente.getPessoa().setIdade(idade.toString());
+            pessoa.setIdade(idade.toString());
         }
     }
 }

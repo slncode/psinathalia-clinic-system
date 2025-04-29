@@ -1,4 +1,4 @@
-package com.psinathalia.clinic.system.exception;
+package com.psinathalia.clinic.system.dto.response;
 
 import java.time.LocalDateTime;
 

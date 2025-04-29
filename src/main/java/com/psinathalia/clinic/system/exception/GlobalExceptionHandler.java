@@ -1,5 +1,7 @@
 package com.psinathalia.clinic.system.exception;
 
+import com.psinathalia.clinic.system.dto.response.CepResponse;
+import com.psinathalia.clinic.system.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,14 +28,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(Exception e) {
-        ErrorResponse error = new ErrorResponse(
-                "Erro interno do servidor",
-                e.getClass().getSimpleName()
-        );
-        return ResponseEntity.internalServerError().body(error);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ErrorResponse> handleGeneral(Exception e) {
+//        ErrorResponse error = new ErrorResponse(
+//                "Erro interno do servidor",
+//                e.getClass().getSimpleName()
+//        );
+//        return ResponseEntity.internalServerError().body(error);
+//    }
 
     @ExceptionHandler(CpfJaCadastradoException.class)
     public ResponseEntity<ErrorResponse> handleCpfJaCadastrado(CpfJaCadastradoException e) {
@@ -100,5 +102,22 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(CepNotFoundException.class)
+    public ResponseEntity<CepResponse> handleCepNotFound(CepNotFoundException e) {
+        return ResponseEntity.status(404)
+                .body(new CepResponse("erro", e.getMessage(), null));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<CepResponse> handleGeneric(Exception e) {
+        return ResponseEntity.status(500)
+                .body(new CepResponse("erro", "Erro interno: " + e.getMessage(), null));
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<String> handleCredenciaisInvalidas(CredenciaisInvalidasException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
 }

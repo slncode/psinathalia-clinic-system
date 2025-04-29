@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/pacientes")
+@RequestMapping("api/pacientes")
 @CrossOrigin(origins = "http://localhost:3000")
 public class PacienteController {
 
@@ -54,21 +54,19 @@ public class PacienteController {
 
 
     @GetMapping
-    public List<PacienteResponse> getAllPacientes() {
-        List<Paciente> pacientes = pacienteService.findAll();
-        pacientes.sort(Comparator.comparing(paciente -> paciente.getPessoa().getNome()));
-
-        return pacientes.stream()
-                .map(PacienteMapper::toResponse)
-                .toList();
+    public ResponseEntity<List<PacienteResponse>> getAllPacientes() {
+        List<PacienteResponse> pacientes = pacienteService.findAllOrdered();
+        return ResponseEntity.ok(pacientes);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PacienteResponse> getPacienteById(@PathVariable Long id) {
-        return pacienteService.findById(id)
-                .map(PacienteMapper::toResponse)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            PacienteResponse response = pacienteService.findByIdResponse(id);
+            return ResponseEntity.ok(response);
+        } catch (PacienteNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}/cpf")
@@ -79,9 +77,8 @@ public class PacienteController {
 
     @PostMapping
     public ResponseEntity<PacienteResponse> createPaciente(@RequestBody @Valid PacienteRequest request) {
-        Paciente paciente = pacienteService.createPaciente(request);
-        PacienteResponse response = PacienteMapper.toResponse(paciente);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        PacienteResponse paciente = pacienteService.createPaciente(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(paciente);
     }
 
     @PostMapping("/verificarCpf")
